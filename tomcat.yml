@@ -1,0 +1,59 @@
+---
+  - name: this is our playbook
+    hosts: webservers
+    vars:
+      group: tomcat
+      user: tomcat
+
+
+
+    tasks:
+      - name: to create tomcat server
+        group:
+          name: "{{ group }}"
+          state: present
+
+      - name: to create user called tomcat
+        user:
+          name: "{{ user }}"
+          group: "{{ group }}"
+          create_home: yes
+          state: present
+          uid: 2000
+          shell: /bin/sh
+ 
+
+      - name: to create a directory to write the tomcat logs
+        file:
+          path: /opt/tomcat_logs
+          state: directory
+          mode: 0644
+          owner: "{{ user }}"
+          group: "{{ group }}"
+
+      - name: to install (java)
+        yum:
+          name: java-1.8.0-openjdk-devel
+          state: present
+
+
+      - name: to download the apace tomcat from web
+        get_url:
+          url: http://apache.osuosl.org/tomcat/tomcat-8/v8.5.33/bin/apache-tomcat-8.5.33.tar.gz
+          dest: /opt/apache-tomcat-8.5.33.tar.gz
+
+      - name: To Unarchive the download tomcat runtime binaries
+        unarchive:
+          src: /opt/apache-tomcat-8.5.33.tar.gz
+          dest: /opt
+          creates: /opt/apache-tomcat-8.5.33.tar.gz
+          remote_src: yes
+
+      - name: To start Apache Tomcat
+        command: nohup /opt/apache-tomcat-8.5.33/bin/startup.sh
+
+      - name: wait for the tomcat to start
+        wait_for:
+          port: 8080
+
+
